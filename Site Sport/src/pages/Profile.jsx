@@ -252,22 +252,22 @@ export default function Profile() {
             <div>
               <strong>Session protégée</strong>
               <p>
-                Données chiffrées séparément pour ce compte. La session locale
-                expire après 12 heures.
+                Votre compte et votre session sont gérés par Supabase. Seules
+                vos données sont accessibles depuis votre espace.
               </p>
             </div>
           </div>
           <div className="account-row">
             <Icon name="wifi-off" />
             <div>
-              <strong>Mode local</strong>
+              <strong>Suivi hors ligne</strong>
               <p>
-                L’adaptateur d’authentification est prêt à être remplacé par le
-                futur service hébergé.
+                Vos modifications sont conservées sur cet appareil puis
+                synchronisées avec votre compte au retour de la connexion.
               </p>
             </div>
           </div>
-          <Button variant="danger" onClick={auth.logout}>
+          <Button variant="danger" disabled={auth.busy} onClick={auth.logout}>
             <Icon name="arrow-left" />
             Se déconnecter
           </Button>

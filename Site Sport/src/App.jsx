@@ -23,6 +23,7 @@ import Profile from "./pages/Profile";
 import { Hydration, Recovery } from "./pages/Recovery";
 import { useAuth } from "./auth";
 import Onboarding from "./Onboarding";
+import CloudPanel, { syncLabels } from "./CloudPanel";
 const main = [
   ["dashboard", "Vue d’ensemble", "home"],
   ["training", "Entraînement", "dumbbell"],
@@ -88,6 +89,7 @@ export default function App() {
     route,
     navigate,
     saveStatus,
+    syncStatus,
     loadError,
     notify,
     toast,
@@ -224,7 +226,7 @@ export default function App() {
               ? "Enregistrement…"
               : saveStatus === "error"
                 ? "Sauvegarde à vérifier"
-                : "Données sauvegardées en local"}
+                : syncLabels[syncStatus]}
             <Icon name="shield" size={13} />
           </div>
         </div>
@@ -283,9 +285,10 @@ export default function App() {
             </button>
           </div>
         </header>
-        <main className="main-content" id="main-content" key={route}>
+        <main className="main-content" id="main-content">
+          <CloudPanel />
           {Page ? (
-            <Page />
+            <Page key={route} />
           ) : (
             <Empty
               title="Cette page n’existe pas"

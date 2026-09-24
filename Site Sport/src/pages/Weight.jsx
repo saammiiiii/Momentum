@@ -42,7 +42,7 @@ export default function Weight() {
     </div>
     <Card>
       <div className="row between"><div><h2 className="section-title">Évolution du poids</h2><p className="muted small">Courbe réelle et moyenne mobile sur 7 jours calendaires.</p></div><div className="chips">{periods.map(([days, label]) => <button key={days} type="button" className={`chip ${period === days ? 'active' : ''}`} onClick={() => setPeriod(days)}>{label}</button>)}</div></div>
-      {data.length ? <LineChart data={data} height={260} unit={unit} secondaryLabel="Moyenne sur 7 jours" /> : <Empty icon="scale" title="Le début de ta courbe" description="Enregistre une pesée pour commencer. Les données restent sur cet appareil." />}
+      {data.length ? <LineChart data={data} height={260} unit={unit} secondaryLabel="Moyenne sur 7 jours" /> : <Empty icon="scale" title="Le début de ta courbe" description="Enregistre une pesée pour commencer. Vos données se synchronisent avec votre compte." />}
       <p className="muted small">Les variations comparent la dernière pesée à la dernière disponible au moins 7 ou 30 jours avant. Même balance et conditions similaires facilitent la comparaison.</p>
     </Card>
     <div className="grid-2">

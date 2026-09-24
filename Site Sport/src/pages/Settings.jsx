@@ -12,7 +12,7 @@ import {
 import { estimateProtein, today } from "../calculations";
 import { exportData, validateImport, requestPersistence } from "../storage";
 import { downloadFile, exportCalendar } from "../notifications";
-import { useAuth } from "../auth";
+import AccountSettings from "../AccountSettings";
 export default function Settings() {
   const { state, update, notify, navigate, saveStatus } = useApp(),
     [profile, setProfile] = useState({ ...state.profile }),
@@ -21,7 +21,7 @@ export default function Settings() {
     ),
     [incoming, setIncoming] = useState(null),
     [persistent, setPersistent] = useState(null);
-  const auth = useAuth();
+  const [importBusy, setImportBusy] = useState(false);
   const file = useRef();
   const set = (key, value) => setProfile((p) => ({ ...p, [key]: value }));
   const setReminder = (key, patch) =>
@@ -50,6 +50,7 @@ export default function Settings() {
     e.target.value = "";
     if (f.size > 12 * 1024 * 1024)
       return notify("Ce fichier dépasse la taille maximale de 12 Mo.", "error");
+    setImportBusy(true);
     try {
       const valid = validateImport(JSON.parse(await f.text()));
       setIncoming(valid);
@@ -60,7 +61,7 @@ export default function Settings() {
           : err.message,
         "error",
       );
-    }
+    } finally { setImportBusy(false); }
   }
   async function allow() {
     if (!("Notification" in window)) return;
@@ -573,13 +574,12 @@ export default function Settings() {
       </Card>
       <Card>
         <div className="section-heading">
-          <h2>Mes données, chez moi</h2>
+          <h2>Mes données</h2>
           <Icon name="shield" className="accent" />
         </div>
         <p className="muted">
-          Vos données sont enregistrées dans ce navigateur. Exportez
-          régulièrement une copie JSON pour les retrouver sur un autre appareil
-          ou après un effacement du stockage.
+          Vos données sont enregistrées sur cet appareil et synchronisées avec votre compte.
+          Gardez aussi une copie JSON de votre suivi.
         </p>
         <div className="row wrap">
           <Button
@@ -595,7 +595,7 @@ export default function Settings() {
             <Icon name="download" size={17} />
             Exporter mes données
           </Button>
-          <Button variant="secondary" onClick={() => file.current.click()}>
+          <Button variant="secondary" disabled={importBusy} onClick={() => file.current.click()}>
             <Icon name="upload" size={17} />
             Importer mes données
           </Button>
@@ -636,33 +636,10 @@ export default function Settings() {
             : "Protéger le stockage local"}
         </Button>
         <p className="small muted">
-          Ce compte utilise un coffre local chiffré, sans outil d’analyse. Les
-          pages, graphiques et données fonctionnent hors connexion après le
-          premier chargement complet de la version installée.
+          Le cache de ce compte permet le suivi hors connexion après une première connexion et le chargement de l’application. Une session expirée demande une reconnexion ; vos données sont conservées.
         </p>
       </Card>
-      <Card>
-        <div className="section-heading">
-          <div>
-            <h2>Compte & profil</h2>
-            <p className="small muted">{auth.user.email}</p>
-          </div>
-          <Icon name="shield" className="accent" />
-        </div>
-        <p className="muted">
-          Modifiez votre pseudo, votre photo et consultez votre rank depuis
-          votre espace personnel.
-        </p>
-        <div className="row wrap">
-          <Button variant="secondary" onClick={() => navigate("profile")}>
-            <Icon name="award" />
-            Ouvrir mon profil
-          </Button>
-          <Button variant="danger" onClick={auth.logout}>
-            Se déconnecter
-          </Button>
-        </div>
-      </Card>
+      <AccountSettings />
       <Card>
         <h2>Installer Momentum</h2>
         <div className="grid-2">
@@ -698,30 +675,31 @@ export default function Settings() {
                 {incoming.sessions.length} séances, {incoming.weights.length}{" "}
                 pesées et {incoming.meals.length} aliments
               </strong>
-              . Elle remplacera les données actuelles de cet appareil.
+              . Elle remplacera le suivi de ce compte après synchronisation.
             </p>
             <p className="small muted">
-              Une copie de vos données actuelles sera téléchargée avant le
-              remplacement.
+              Une copie de vos données actuelles sera conservée sur cet appareil et téléchargée avant le remplacement.
             </p>
             <div className="row end">
               <Button variant="secondary" onClick={() => setIncoming(null)}>
                 Annuler
               </Button>
               <Button
-                onClick={() => {
+                disabled={importBusy}
+                onClick={async () => {
+                  setImportBusy(true);
                   try {
                     downloadFile(
                       `momentum-avant-import-${today()}.json`,
                       exportData(state),
                     );
-                    update(incoming);
+                    await update(incoming, "Avant import JSON");
                     setProfile({ ...incoming.profile });
                     setIncoming(null);
                     notify("Sauvegarde importée. Vos données sont restaurées.");
                   } catch (e) {
                     notify(e.message, "error");
-                  }
+                  } finally { setImportBusy(false); }
                 }}
               >
                 Remplacer mes données

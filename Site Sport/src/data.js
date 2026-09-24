@@ -506,6 +506,14 @@ export const DEFAULT_EXERCISES = [
   ),
 ];
 
+DEFAULT_EXERCISES.push(
+  exercise("bench-press", "Développé couché barre", "Pectoraux", ["Épaules", "Triceps"], "Poussée", ["Garde les pieds au sol et les omoplates stables.", "Utilise les sécurités du rack et une amplitude contrôlée."], { rest: 120 }),
+  exercise("chest-supported-row", "Rowing poitrine sur banc", "Dos", ["Biceps", "Épaules"], "Tirage", ["Garde la poitrine en contact avec le banc incliné.", "Ramène les coudes sans relever le buste."], { rest: 90 }),
+  exercise("arnold-press", "Développé Arnold", "Épaules", ["Triceps"], "Poussée", ["Fais pivoter les mains progressivement, sans forcer la rotation.", "Garde le dos stable contre le dossier."], { rest: 90 }),
+  exercise("plank", "Gainage ventral", "Abdominaux", [], "Gainage", ["Aligne la tête, le bassin et les talons.", "Respire pendant une tenue de 20 à 40 secondes selon ton aisance. Note une répétition par tenue."], { repsMin: 1, repsMax: 1, rest: 60 }),
+  exercise("side-plank", "Gainage latéral", "Abdominaux", ["Fessiers"], "Gainage", ["Place le coude sous l’épaule et garde le bassin aligné.", "Choisis une durée confortable de chaque côté. Note une répétition par tenue."], { repsMin: 1, repsMax: 1, rest: 60 }),
+);
+
 function programEntry(id, overrides = {}) {
   const item = DEFAULT_EXERCISES.find((entry) => entry.id === id);
   return {

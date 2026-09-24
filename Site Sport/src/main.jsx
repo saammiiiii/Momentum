@@ -1,9 +1,9 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { AppProvider } from "./context";
 import { AuthProvider, useAuth } from "./auth";
 import AuthPage from "./AuthPage";
-import App from "./App";
+const App = lazy(() => import("./App"));
 import "./styles.css";
 class ErrorBoundary extends React.Component {
   state = { error: null };
@@ -27,10 +27,7 @@ class ErrorBoundary extends React.Component {
         >
           Revenir à l’accueil
         </button>
-        <details>
-          <summary>Détail de l’erreur</summary>
-          {String(this.state.error)}
-        </details>
+
       </main>
     ) : (
       this.props.children
@@ -46,10 +43,10 @@ function Root() {
         <p>Ouverture de votre espace sécurisé…</p>
       </main>
     );
-  if (!auth.user || auth.pendingRecovery) return <AuthPage />;
+  if (!auth.user || auth.pendingEmail || auth.recovery || auth.callback) return <AuthPage />;
   return (
     <AppProvider key={auth.user.id}>
-      <App />
+      <Suspense fallback={<main className="loading-screen"><p>Chargement de Momentum…</p></main>}><App /></Suspense>
     </AppProvider>
   );
 }
@@ -60,11 +57,23 @@ createRoot(document.getElementById("root")).render(
     </AuthProvider>
   </ErrorBoundary>,
 );
-if ("serviceWorker" in navigator && import.meta.env.PROD)
-  window.addEventListener("load", () =>
-    navigator.serviceWorker
-      .register("./sw.js")
-      .catch((error) =>
-        console.warn("Mode hors connexion indisponible", error),
-      ),
-  );
+if ("serviceWorker" in navigator && import.meta.env.PROD) {
+  let refreshing = false;
+  const hadController = Boolean(navigator.serviceWorker.controller);
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (hadController && !refreshing) { refreshing = true; location.reload(); }
+  });
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }).then((registration) => {
+      const announce = () => window.dispatchEvent(new Event("momentum-update-ready"));
+      if (registration.waiting) announce();
+      registration.addEventListener("updatefound", () => {
+        const worker = registration.installing;
+        worker?.addEventListener("statechange", () => { if (worker.state === "installed" && navigator.serviceWorker.controller) announce(); });
+      });
+      const check = () => { if (document.visibilityState === "visible") registration.update().catch(() => {}); };
+      document.addEventListener("visibilitychange", check);
+      registration.update().catch(() => {});
+    }).catch(() => {});
+  });
+}

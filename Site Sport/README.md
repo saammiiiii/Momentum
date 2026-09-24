@@ -1,42 +1,35 @@
 # Momentum
 
-Application web mobile-first de suivi de musculation, nutrition et récupération. Elle fonctionne hors connexion après installation, conserve les données par compte dans un coffre IndexedDB chiffré et peut évoluer vers un service hébergé.
+Application React/Vite de suivi musculation, nutrition et récupération. Frontend GitHub Pages, authentification et données par utilisateur dans Supabase, cache IndexedDB et synchronisation hors ligne.
 
-## Développement
+## Démarrage
+
+Copier .env.example dans .env.local et renseigner les deux variables publiques du projet Supabase.
 
 ```bash
-npm install
+npm ci
 npm run dev
 npm test
 npm run build
 npm run preview
 npm run test:e2e
+npm audit
 ```
 
-Les tests unitaires couvrent les calculs et la validation profonde des sauvegardes. Le parcours Edge couvre la création de deux comptes, la séparation des données, la récupération du mot de passe, une séance, l’eau, le sommeil, le rechargement et toutes les routes privées.
+Sans configuration Supabase, l'écran de compte indique que le service est indisponible ; les anciennes données restent conservées. Les tests navigateur utilisent leur propre faux backend et compilent un artefact isolé.
 
-## Comptes et sécurité locale
+## Production et données
 
-Chaque compte reçoit une clé de données aléatoire. Cette clé est enveloppée avec AES-GCM par une clé dérivée du mot de passe avec PBKDF2-SHA-256 (310 000 itérations). Le code de récupération enveloppe séparément la même clé. Les données sportives sont chiffrées avec AES-GCM et liées à l’identifiant du compte comme donnée authentifiée.
+Suivre [PRODUCTION_SETUP.md](docs/PRODUCTION_SETUP.md) pour les migrations SQL, RLS, confirmation d'e-mail, SMTP, variables GitHub et tests sur momentumfit.fr. Le workflow actif se trouve dans ../.github/workflows/deploy.yml ; le dépôt contient Site Sport comme sous-dossier.
 
-La clé de session reste dans `sessionStorage`, expire après 12 heures et disparaît à la déconnexion ou à la fermeture de l’onglet. Le mot de passe n’est jamais enregistré. Une exportation JSON demandée par l’utilisateur est volontairement lisible afin de rester portable : elle doit être conservée comme une sauvegarde personnelle.
+L'[audit d'architecture](docs/ARCHITECTURE.md) décrit les formats historiques et leur mapping. La synchronisation vérifie une révision distante ; un conflit préserve les deux copies et demande un choix. Le cache est propre à chaque compte et conserve les envois en attente. Les anciens coffres AES-GCM ne sont jamais effacés et peuvent être déverrouillés pour migration. Le nouveau cache ne promet pas de chiffrement de bout en bout.
 
-Cette authentification locale isole réellement les profils dans l’application et chiffre leur stockage. Elle ne remplace pas un serveur pour une mise en ligne multi-appareils. La récupération par e-mail, la révocation distante et la protection contre un appareil compromis nécessitent le service décrit ci-dessous.
+Les sauvegardes JSON v1/v2 restent compatibles. Les exports contiennent uniquement les données de suivi, sans session ni secret. Les copies avant import/migration/conflit sont exportables dans Paramètres.
 
-## Passage en production hébergée
+## Illustrations et PWA
 
-L’interface `AUTH_ADAPTER_CONTRACT` de `src/auth.jsx` sépare l’UI du fournisseur d’identité. Pour une version en ligne :
+50 mouvements, identifiants stables et illustrations originales WebP 960 × 720. Les PNG sources restent dans assets/exercise-sources, hors du déploiement. Pour optimiser : npm run images:optimize. [Prompts et inventaire](docs/EXERCISE_IMAGE_PROMPTS.md).
 
-1. remplacer `localAuthAdapter` par un adaptateur OIDC/Supabase/Auth.js ou une API interne utilisant des cookies de session `HttpOnly`, `Secure`, `SameSite=Lax` ;
-2. implémenter un dépôt distant derrière la même frontière que `loadUserState` / `saveUserState`, avec synchronisation IndexedDB hors connexion et résolution de versions ;
-3. stocker `user_id` sur chaque enregistrement et appliquer l’isolation côté base (Row Level Security ou filtrage obligatoire testé côté serveur) ;
-4. envoyer les e-mails de vérification et de réinitialisation avec des jetons courts, à usage unique et expirants ;
-5. déployer sous HTTPS avec les en-têtes de `public/_headers`, rotation de session, limitation de débit, journal d’audit et sauvegardes chiffrées.
+Le service worker précache le code de l'application ; les images se mettent en cache lors de leur consultation. Une nouvelle version propose une mise à jour après sauvegarde locale. Les rappels restent limités au navigateur ouvert, avec export calendrier ICS disponible.
 
-Les collections à synchroniser sont déjà séparées dans l’état utilisateur : programme, séances, poids, repas, suppléments, hydratation, sommeil, objectifs et historique des ranks. Les pages privées ne sont montées qu’après restauration d’une session valide.
-
-## Données et confidentialité
-
-Aucun outil d’analyse ni service externe n’est appelé par l’application. Les illustrations sont des fichiers locaux optimisés. Les notifications à heure fixe restent soumises aux limites du navigateur ; l’export calendrier `.ics` offre une solution fiable sans serveur push.
-
-Les estimations de protéines et l’indicateur d’état du jour sont des repères généraux. Ils ne constituent ni une prescription, ni un diagnostic médical.
+Aucun outil d'analyse n'est intégré. Les appels externes de données passent par votre projet Supabase. Les repères de protéines et de récupération ne constituent ni prescription ni diagnostic médical.

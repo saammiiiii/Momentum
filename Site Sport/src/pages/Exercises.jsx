@@ -14,48 +14,15 @@ import {
 } from "../components";
 import { MUSCLES } from "../data";
 
-const primaryVisuals = new Set([
-  "incline-press",
-  "shoulder-press",
-  "triceps-extension",
-  "high-cable-fly",
-  "lateral-raise",
-  "lat-pulldown",
-  "preacher-curl",
-  "seated-row",
-  "incline-hammer-curl",
-  "barbell-row",
-  "half-squat",
-  "leg-extension",
-  "leg-curl",
-  "leg-press",
-]);
+import { exerciseMetadata } from "../exerciseCatalog";
 function ExerciseVisual({ exercise, large = false }) {
+  const [failed, setFailed] = useState(false);
   if (!exercise) return null;
-  const fallback =
-    exercise.muscle === "Dos"
-      ? "lat-pulldown"
-      : exercise.muscle === "Biceps"
-        ? "preacher-curl"
-        : exercise.muscle === "Épaules"
-          ? "shoulder-press"
-          : exercise.muscle === "Quadriceps" ||
-              exercise.muscle === "Ischio-jambiers" ||
-              exercise.muscle === "Fessiers" ||
-              exercise.muscle === "Mollets"
-            ? "half-squat"
-            : "incline-press";
-  const id = primaryVisuals.has(exercise.id) ? exercise.id : fallback;
-  return (
-    <div className={`exercise-visual ${large ? "large" : ""}`}>
-      <img
-        src={`./exercises/${id}.webp`}
-        alt={`Illustration : ${exercise.name}`}
-        loading="lazy"
-      />
-      <span>{exercise.movement}</span>
-    </div>
-  );
+  const meta = exerciseMetadata(exercise);
+  return <div className={"exercise-visual " + (large ? "large" : "")}>
+    {meta.illustration && !failed ? <img key={exercise.id} src={meta.illustration} alt={"Illustration : " + exercise.name} loading="lazy" decoding="async" width="960" height="720" onError={() => setFailed(true)} /> : <div className="exercise-placeholder"><Icon name="dumbbell" size={36} /><small>Illustration à venir</small></div>}
+    <span>{exercise.movement}</span>
+  </div>;
 }
 import {
   exerciseHistory,
@@ -302,7 +269,9 @@ export default function Exercises() {
       {exercise && (
         <Modal wide title={exercise.name} onClose={() => setSelected(null)}>
           <div className="page-stack">
-            <ExerciseVisual exercise={exercise} large />
+            <ExerciseVisual key={exercise.id} exercise={exercise} large />
+            <p className="muted">{exerciseMetadata(exercise).description}</p>
+            <p className="small muted">{exerciseMetadata(exercise).equipment} · {exerciseMetadata(exercise).category}</p>
             <div className="row">
               <Badge>{exercise.muscle}</Badge>
               <Badge tone="muted">{exercise.movement}</Badge>
